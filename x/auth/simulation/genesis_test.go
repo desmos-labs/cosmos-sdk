@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"testing"
 
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -20,6 +22,7 @@ import (
 func TestRandomizedGenState(t *testing.T) {
 	registry := codectypes.NewInterfaceRegistry()
 	types.RegisterInterfaces(registry)
+	cryptocodec.RegisterInterfaces(registry)
 	cdc := codec.NewProtoCodec(registry)
 
 	s := rand.NewSource(1)
