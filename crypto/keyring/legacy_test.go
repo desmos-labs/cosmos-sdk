@@ -53,5 +53,5 @@ func TestLegacyKeybase(t *testing.T) {
 
 	err = importer.Import("test", armoredInfo)
 	require.Error(t, err)
-	require.Equal(t, `public key already exist in keybase`, err.Error())
+	require.Equal(t, `public key already exists in keybase`, err.Error())
 }
