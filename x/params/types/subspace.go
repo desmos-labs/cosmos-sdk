@@ -68,6 +68,18 @@ func (s Subspace) WithKeyTable(table KeyTable) Subspace {
 	return s
 }
 
+func (s Subspace) UpdateKeyTable(table KeyTable) Subspace {
+	if table.m == nil {
+		panic("UpdateKeyTable() called with nil KeyTable")
+	}
+
+	for k, v := range table.m {
+		s.table.m[k] = v
+	}
+
+	return s
+}
+
 // Returns a KVStore identical with ctx.KVStore(s.key).Prefix()
 func (s Subspace) kvStore(ctx sdk.Context) sdk.KVStore {
 	// append here is safe, appends within a function won't cause

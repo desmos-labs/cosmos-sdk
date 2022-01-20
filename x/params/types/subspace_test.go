@@ -26,6 +26,16 @@ type SubspaceTestSuite struct {
 	ss    types.Subspace
 }
 
+func (suite *SubspaceTestSuite) TestUpdateKeyTable() {
+	suite.Require().True(suite.ss.HasKeyTable())
+	suite.Require().Panics(func() {
+		suite.ss.WithKeyTable(paramKeyTable())
+	})
+	suite.Require().NotPanics(func() {
+		suite.ss.UpdateKeyTable(paramKeyTable())
+	})
+}
+
 func (suite *SubspaceTestSuite) SetupTest() {
 	db := dbm.NewMemDB()
 
