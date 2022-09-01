@@ -4,14 +4,14 @@ module github.com/cosmos/cosmos-sdk
 
 require (
 	github.com/99designs/keyring v1.1.6
-	github.com/armon/go-metrics v0.3.10
+	github.com/armon/go-metrics v0.4.0
 	github.com/bgentry/speakeasy v0.1.0
 	github.com/btcsuite/btcd v0.22.1
 	github.com/coinbase/rosetta-sdk-go v0.7.0
 	github.com/confio/ics23/go v0.7.0
 	github.com/cosmos/btcutil v1.0.4
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/iavl v0.19.1
+	github.com/cosmos/iavl v0.19.0
 	github.com/cosmos/ledger-cosmos-go v0.11.1
 	github.com/gogo/gateway v1.1.0
 	github.com/gogo/protobuf v1.3.3
