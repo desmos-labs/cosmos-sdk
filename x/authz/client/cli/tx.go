@@ -134,7 +134,7 @@ func GetAuthorizationFromFlags(typ string, flags *pflag.FlagSet) (authz.Authoriz
 	return authorization, nil
 }
 
-// getStakeAuthorization returns a send authorization from the given command flags
+// getSendAuthorizationFromFlags returns a send authorization from the given command flags
 func getSendAuthorizationFromFlags(flags *pflag.FlagSet) (*bank.SendAuthorization, error) {
 	limit, err := flags.GetString(FlagSpendLimit)
 	if err != nil {
@@ -153,7 +153,7 @@ func getSendAuthorizationFromFlags(flags *pflag.FlagSet) (*bank.SendAuthorizatio
 	return bank.NewSendAuthorization(spendLimit), nil
 }
 
-// getStakeAuthorization returns a generic authorization from the given command flags
+// getGenericAuthorizationFromFlags returns a generic authorization from the given command flags
 func getGenericAuthorizationFromFlags(flags *pflag.FlagSet) (*authz.GenericAuthorization, error) {
 	msgType, err := flags.GetString(FlagMsgType)
 	if err != nil {
