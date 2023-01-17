@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -80,84 +81,9 @@ Examples:
 				return err
 			}
 
-			var authorization authz.Authorization
-			switch args[1] {
-			case "send":
-				limit, err := cmd.Flags().GetString(FlagSpendLimit)
-				if err != nil {
-					return err
-				}
-
-				spendLimit, err := sdk.ParseCoinsNormalized(limit)
-				if err != nil {
-					return err
-				}
-
-				if !spendLimit.IsAllPositive() {
-					return fmt.Errorf("spend-limit should be greater than zero")
-				}
-
-				authorization = bank.NewSendAuthorization(spendLimit)
-			case "generic":
-				msgType, err := cmd.Flags().GetString(FlagMsgType)
-				if err != nil {
-					return err
-				}
-
-				authorization = authz.NewGenericAuthorization(msgType)
-			case delegate, unbond, redelegate:
-				limit, err := cmd.Flags().GetString(FlagSpendLimit)
-				if err != nil {
-					return err
-				}
-
-				allowValidators, err := cmd.Flags().GetStringSlice(FlagAllowedValidators)
-				if err != nil {
-					return err
-				}
-
-				denyValidators, err := cmd.Flags().GetStringSlice(FlagDenyValidators)
-				if err != nil {
-					return err
-				}
-
-				var delegateLimit *sdk.Coin
-				if limit != "" {
-					spendLimit, err := sdk.ParseCoinsNormalized(limit)
-					if err != nil {
-						return err
-					}
-
-					if !spendLimit.IsAllPositive() {
-						return fmt.Errorf("spend-limit should be greater than zero")
-					}
-					delegateLimit = &spendLimit[0]
-				}
-
-				allowed, err := bech32toValidatorAddresses(allowValidators)
-				if err != nil {
-					return err
-				}
-
-				denied, err := bech32toValidatorAddresses(denyValidators)
-				if err != nil {
-					return err
-				}
-
-				switch args[1] {
-				case delegate:
-					authorization, err = staking.NewStakeAuthorization(allowed, denied, staking.AuthorizationType_AUTHORIZATION_TYPE_DELEGATE, delegateLimit)
-				case unbond:
-					authorization, err = staking.NewStakeAuthorization(allowed, denied, staking.AuthorizationType_AUTHORIZATION_TYPE_UNDELEGATE, delegateLimit)
-				default:
-					authorization, err = staking.NewStakeAuthorization(allowed, denied, staking.AuthorizationType_AUTHORIZATION_TYPE_REDELEGATE, delegateLimit)
-				}
-				if err != nil {
-					return err
-				}
-
-			default:
-				return fmt.Errorf("invalid authorization type, %s", args[1])
+			authorization, err := GetAuthorizationFromFlags(args[1], cmd.Flags())
+			if err != nil {
+				return err
 			}
 
 			msg, err := authz.NewMsgGrant(clientCtx.GetFromAddress(), grantee, authorization, time.Unix(exp, 0))
@@ -175,6 +101,126 @@ Examples:
 	cmd.Flags().StringSlice(FlagDenyValidators, []string{}, "Deny validators addresses separated by ,")
 	cmd.Flags().Int64(FlagExpiration, time.Now().AddDate(1, 0, 0).Unix(), "The Unix timestamp. Default is one year.")
 	return cmd
+}
+
+// GetAuthorizationFromFlags returns an authorization from the given command flags
+func GetAuthorizationFromFlags(typ string, flags *pflag.FlagSet) (authz.Authorization, error) {
+	var authorization authz.Authorization
+	switch typ {
+	case "send":
+		sendAuthz, err := getSendAuthorizationFromFlags(flags)
+		if err != nil {
+			return nil, err
+		}
+		authorization = sendAuthz
+
+	case "generic":
+		genericAuthz, err := getGenericAuthorizationFromFlags(flags)
+		if err != nil {
+			return nil, err
+		}
+		authorization = genericAuthz
+
+	case delegate, unbond, redelegate:
+		stakeAuthz, err := getStakeAuthorizationFromFlags(typ, flags)
+		if err != nil {
+			return nil, err
+		}
+		authorization = stakeAuthz
+
+	default:
+		return nil, fmt.Errorf("invalid authorization type, %s", typ)
+	}
+	return authorization, nil
+}
+
+// getStakeAuthorization returns a send authorization from the given command flags
+func getSendAuthorizationFromFlags(flags *pflag.FlagSet) (*bank.SendAuthorization, error) {
+	limit, err := flags.GetString(FlagSpendLimit)
+	if err != nil {
+		return nil, err
+	}
+
+	spendLimit, err := sdk.ParseCoinsNormalized(limit)
+	if err != nil {
+		return nil, err
+	}
+
+	if !spendLimit.IsAllPositive() {
+		return nil, fmt.Errorf("spend-limit should be greater than zero")
+	}
+
+	return bank.NewSendAuthorization(spendLimit), nil
+}
+
+// getStakeAuthorization returns a generic authorization from the given command flags
+func getGenericAuthorizationFromFlags(flags *pflag.FlagSet) (*authz.GenericAuthorization, error) {
+	msgType, err := flags.GetString(FlagMsgType)
+	if err != nil {
+		return nil, err
+	}
+	return authz.NewGenericAuthorization(msgType), nil
+}
+
+// getStakeAuthorizationFromFlags returns a stake authorization from the given command flags
+func getStakeAuthorizationFromFlags(stakingType string, flags *pflag.FlagSet) (*staking.StakeAuthorization, error) {
+	limit, err := flags.GetString(FlagSpendLimit)
+	if err != nil {
+		return nil, err
+	}
+
+	var delegateLimit *sdk.Coin
+	if limit != "" {
+		spendLimit, err := sdk.ParseCoinNormalized(limit)
+		if err != nil {
+			return nil, err
+		}
+
+		if !spendLimit.IsPositive() {
+			return nil, fmt.Errorf("spend-limit should be greater than zero")
+		}
+		delegateLimit = &spendLimit
+	}
+
+	allowed, err := getValidatorAddressesFromFlags(flags, FlagAllowedValidators)
+	if err != nil {
+		return nil, err
+	}
+
+	denied, err := getValidatorAddressesFromFlags(flags, FlagDenyValidators)
+	if err != nil {
+		return nil, err
+	}
+
+	var authorizationType staking.AuthorizationType
+	switch stakingType {
+	case delegate:
+		authorizationType = staking.AuthorizationType_AUTHORIZATION_TYPE_DELEGATE
+	case unbond:
+		authorizationType = staking.AuthorizationType_AUTHORIZATION_TYPE_UNDELEGATE
+	default:
+		authorizationType = staking.AuthorizationType_AUTHORIZATION_TYPE_REDELEGATE
+	}
+
+	return staking.NewStakeAuthorization(allowed, denied, authorizationType, delegateLimit)
+}
+
+// getValidatorAddressesFromFlags returns validator addresses with type (allowed or deny) from flags
+func getValidatorAddressesFromFlags(flags *pflag.FlagSet, typ string) ([]sdk.ValAddress, error) {
+	validators, err := flags.GetStringSlice(typ)
+	if err != nil {
+		return nil, err
+	}
+
+	validatorAddrs := make([]sdk.ValAddress, len(validators))
+	for i, validator := range validators {
+		addr, err := sdk.ValAddressFromBech32(validator)
+		if err != nil {
+			return nil, err
+		}
+		validatorAddrs[i] = addr
+	}
+	return validatorAddrs, nil
 }
 
 func NewCmdRevokeAuthorization() *cobra.Command {
@@ -246,16 +292,4 @@ Example:
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd
-}
-
-func bech32toValidatorAddresses(validators []string) ([]sdk.ValAddress, error) {
-	vals := make([]sdk.ValAddress, len(validators))
-	for i, validator := range validators {
-		addr, err := sdk.ValAddressFromBech32(validator)
-		if err != nil {
-			return nil, err
-		}
-		vals[i] = addr
-	}
-	return vals, nil
 }
