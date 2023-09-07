@@ -187,7 +187,8 @@ func SimulateMsgRevoke(
 
 		granterAcc, ok := simtypes.FindAccount(accs, granterAddr)
 		if !ok {
-			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgRevoke, "account not found"), nil, sdkerrors.ErrNotFound.Wrapf("account not found")
+			// Skip because account not found inside simulation accounts (granter can be subspace treasury account)
+			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgRevoke, "account not found"), nil, nil
 		}
 
 		spendableCoins := bk.SpendableCoins(ctx, granterAddr)
