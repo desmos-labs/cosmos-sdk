@@ -13,7 +13,7 @@ require (
 	github.com/regen-network/gocuke v0.6.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20230131160201-f062dba9d201
-	google.golang.org/grpc v1.60.1
+	google.golang.org/grpc v1.61.1
 	google.golang.org/protobuf v1.32.0
 	gotest.tools/v3 v3.5.1
 	pgregory.net/rapid v1.1.0
