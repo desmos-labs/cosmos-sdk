@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.55.0
-	google.golang.org/protobuf v1.33.0
+	google.golang.org/protobuf v1.35.2
 	gotest.tools/v3 v3.5.1
 	sigs.k8s.io/yaml v1.3.0
 )
