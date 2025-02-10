@@ -15,7 +15,7 @@ require (
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	google.golang.org/grpc v1.60.1
 	google.golang.org/protobuf v1.33.0
-	gotest.tools/v3 v3.5.1
+	gotest.tools/v3 v3.5.2
 	pgregory.net/rapid v1.1.0
 )
 
